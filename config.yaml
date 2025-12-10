@@ -1,0 +1,88 @@
+# CPT Configuration for Code Fine-tuning
+# ========================================
+
+# Weights & Biases Configuration
+wandb:
+  api_key: ""  # Paste your wandb API key here (or set WANDB_API_KEY env var)
+  project: "phased-cpt-finetuning"  # Your wandb project name
+  entity: ""  # Your wandb username/team (optional)
+  enabled: true  # Set to false to disable wandb
+
+# Model Configuration
+model:
+  name: "Kwaipilot/KAT-Dev"
+  size: "32B"
+  type: "instruct"  # chat/instruct model with conversational capabilities
+
+# Training Configuration
+training:
+  # LoRA settings
+  lora:
+    r: 128                   # Increased rank for 32B model with 8 GPUs
+    alpha: 256               # LoRA alpha (typically 2*r)
+    dropout: 0.05            # LoRA dropout
+    target_modules:          # Modules to apply LoRA to
+      - q_proj
+      - k_proj
+      - v_proj
+      - o_proj
+      - gate_proj
+      - up_proj
+      - down_proj
+  
+  # Training hyperparameters - Optimized for 8x H200 144GB with 32K context
+  micro_batch_size: 1        # Per GPU batch size (32K context requires smaller batches)
+  gradient_accumulation_steps: 6  # Effective batch = 1 * 6 * 8 = 48
+  eval_batch_size: 1         # Evaluation batch size per GPU
+  learning_rate: 0.0001       # 1e-4 for larger batch size
+  lr_scheduler: "cosine"
+  warmup_ratio: 0.03
+  weight_decay: 0.1
+  max_grad_norm: 1.0
+  
+  # Precision
+  bf16: true
+  fp16: false
+  tf32: true
+  
+  # Logging & Checkpointing
+  logging_steps: 10          # More frequent logging for 8 GPUs
+  save_steps: 50           # Save checkpoint every 100 steps
+  save_total_limit: 3       # Keep only latest 3 checkpoints
+  eval_steps: 50           # Evaluate every 100 steps
+  
+  # Memory optimization
+  gradient_checkpointing: true
+  sample_packing: true       # Enabled for better GPU utilization on H200
+
+# Phased Training Configuration
+phased_training:  
+  phases:
+    - name: "Foundation"
+      dataset_file: "phase1_foundation.jsonl"
+      epochs: 3
+      description: "Core codebase understanding"
+    - name: "Evolution"
+      dataset_file: "phase2_evolution.jsonl"
+      epochs: 2
+      description: "Code evolution patterns"
+    - name: "PR Mastery"
+      dataset_file: "phase3_pr_mastery.jsonl"
+      epochs: 2
+      description: "Pull request and review patterns"
+  
+  # DeepSpeed: Use ZeRO-3 for 16K context (ZeRO-2 for shorter sequences)
+  # ZeRO-3 shards model parameters across GPUs for better memory efficiency
+  
+# Dataset Configuration
+dataset:
+  output_dir: "./dataset"    # Local dataset directory
+  train_split: 0.95
+  val_split: 0.05
+  random_seed: 42
+  
+  # Context window settings
+  max_tokens: 32768         # 32K context window
+  overlap_tokens: 2048      # Overlap between chunks for continuity
+  chunk_long_samples: true  # Enable chunking for samples exceeding max_tokens
+

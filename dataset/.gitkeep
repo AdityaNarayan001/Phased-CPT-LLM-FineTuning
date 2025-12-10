@@ -1,0 +1,9 @@
+# Placeholder file - add your training data here
+# 
+# Expected files in this directory:
+# - phase1_foundation.jsonl
+# - phase2_evolution.jsonl
+# - phase3_pr_mastery.jsonl
+#
+# Format (one JSON object per line):
+# {"training_content": "Your training text content here..."}
