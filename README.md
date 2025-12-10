@@ -68,6 +68,8 @@ Required files:
 - `dataset/phase2_evolution.jsonl`
 - `dataset/phase3_pr_mastery.jsonl`
 
+**Dataset Generation**: For automated dataset creation from GitHub repositories, see the companion tool: [Phased-CPT-DatasetGenerator](https://github.com/AdityaNarayan001/Phased-CPT-DatasetGenerator)
+
 ### 3. Configure Training
 
 Edit `config.yaml` to customize:
